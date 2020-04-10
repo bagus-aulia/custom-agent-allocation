@@ -8,9 +8,8 @@ import (
 type Agent struct {
 	gorm.Model
 	Rooms    []Room `gorm:"foreignkey:AgentID"`
-	Nama     string
+	Name     string
 	Email    string `gorm:"unique_index"`
-	SocialID string
-	Provider string
+	Password string
 	Avatar   string
 }

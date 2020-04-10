@@ -29,4 +29,20 @@ func InitDB() {
 	DB.Model(&models.Agent{}).Related(&models.Room{})
 	DB.Model(&models.Customer{}).Related(&models.Room{})
 	DB.Model(&models.Room{}).Related(&models.Message{})
+
+	createAntrianAgent()
+}
+
+func createAntrianAgent() {
+	var agent models.Agent
+
+	if DB.First(&agent, "name = ?", "antrian").RecordNotFound() {
+		agent = models.Agent{
+			Name:   "antrian",
+			Email:  "antrian@mail.com",
+			Avatar: "default.jpg",
+		}
+
+		DB.Create(&agent)
+	}
 }

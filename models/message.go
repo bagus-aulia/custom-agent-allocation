@@ -7,8 +7,9 @@ import (
 //Message models
 type Message struct {
 	gorm.Model
-	Room     Room `gorm:"foreignkey:ID;association_foreignkey:RoomID"`
-	RoomID   uint `sql:"type:integer REFERENCES room(id) ON DELETE CASCADE ON UPDATE CASCADE"`
-	SenderID uint
-	Message  string `sql:"type:text;"`
+	RoomID      uint
+	SenderID    int
+	SenderAgent bool   `gorm:"default:0"`
+	Message     string `sql:"type:text;"`
+	IsReaded    bool   `gorm:"default:0"`
 }

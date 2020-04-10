@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/bagus-aulia/pondok-sinau-golang/config"
-	"github.com/bagus-aulia/pondok-sinau-golang/middleware"
-	"github.com/bagus-aulia/pondok-sinau-golang/routes"
+	"github.com/bagus-aulia/custom-agent-allocation/config"
+	"github.com/bagus-aulia/custom-agent-allocation/middleware"
+	"github.com/bagus-aulia/custom-agent-allocation/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/subosito/gotenv"
 )
@@ -17,61 +17,32 @@ func main() {
 
 	api := route.Group("/api/v1/")
 	{
-		// api.GET("/", routes.Home)
-		// api.GET("/dashboard", routes.Home)
-		api.GET("/auth/:provider", routes.RedirectHandler)          //done
-		api.GET("/auth/:provider/callback", routes.CallbackHandler) //done
-
-		api.POST("/check-username/:role", routes.CheckUsername) //done
-
-		member := api.Group("/member")
+		customer := api.Group("/customer")
 		{
-			member.GET("/", routes.MemberIndex)                    //done
-			member.GET("/profile/:username", routes.MemberProfile) //done
+			customer.GET("/", middleware.IsAuth(), routes.CustomerIndex)
+			customer.GET("/receive", middleware.IsAuth(), routes.CustomerReceive)
 
-			member.POST("/", middleware.IsAuth(), routes.MemberCreate) //done
+			customer.POST("/login", routes.CustomerLogin)
+			customer.POST("/send", middleware.IsAuth(), routes.CustomerSend)
 
-			member.PUT("/update/:id", middleware.IsAuth(), routes.MemberUpdate) //done
-
-			member.DELETE("/delete/:id", middleware.IsAuth(), routes.MemberDelete) //done
+			//customer.PUT("/read", middleware.IsAuth(), routes.CustomerIndex)
 		}
 
-		admin := api.Group("/admin")
+		agent := api.Group("agent")
 		{
-			admin.GET("/", routes.AdminIndex)                    //done
-			admin.GET("/profile/:username", routes.AdminProfile) //done
+			agent.GET("/", middleware.IsAdmin(), routes.AgentIndex)
+			agent.GET("/receive", middleware.IsAdmin(), routes.CustomerLogin)
 
-			admin.PUT("/update/:id", middleware.IsAuth(), routes.AdminUpdate)           //
-			admin.PUT("/toggle-role/:id", middleware.IsAdmin(), routes.AdminToggleRole) //done
+			agent.POST("/login", routes.AgentLogin)
+			// agent.POST("/send", routes.CustomerLogin)
+
+			//agent.PUT("/read", middleware.IsAuth(), routes.CustomerIndex)
 		}
 
-		book := api.Group("/book")
+		room := api.Group("room")
 		{
-			book.GET("/", routes.BookIndex)              //done
-			book.GET("/detail/:code", routes.BookDetail) //done
-
-			book.POST("/", middleware.IsAuth(), routes.BookCreate) //done
-
-			book.PUT("/update/:id", middleware.IsAuth(), routes.BookUpdate) //done
-
-			book.DELETE("/delete/:id", middleware.IsAuth(), routes.BookDelete) //done
-		}
-
-		borrow := api.Group("/borrow")
-		{
-			borrow.GET("/", middleware.IsAuth(), routes.BorrowIndex)              //done
-			borrow.GET("/detail/:code", middleware.IsAuth(), routes.BorrowDetail) //done
-
-			borrow.POST("/", middleware.IsAuth(), routes.BorrowCreate) //done
-
-			borrow.PUT("/update/:id", middleware.IsAuth(), routes.BorrowUpdate) //done
-
-			borrow.DELETE("/delete/:id", middleware.IsAuth(), routes.BorrowDelete) //done
-		}
-
-		returns := api.Group("/return")
-		{
-			returns.PUT("/update/:id", middleware.IsAuth(), routes.Return) //done
+			room.GET("/divide", routes.CustomerLogin)
+			room.PUT("/resolve", routes.CustomerLogin)
 		}
 	}
 
