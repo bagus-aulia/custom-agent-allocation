@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 
@@ -40,6 +42,7 @@ func AgentLogin(c *gin.Context) {
 	var agent models.Agent
 	name := c.PostForm("name")
 	email := c.PostForm("email")
+	password := getMD5Hash(c.PostForm("password"))
 
 	if email == "" {
 		c.JSON(403, gin.H{
@@ -58,6 +61,17 @@ func AgentLogin(c *gin.Context) {
 		}
 
 		config.DB.Create(&agent)
+	} else {
+		if agent.Password != password {
+			c.JSON(403, gin.H{
+				"message": "password salah",
+				"name":    name,
+				"email":   email,
+			})
+
+			c.Abort()
+			return
+		}
 	}
 
 	jwtToken := createTokenAgent(&agent)
@@ -129,4 +143,10 @@ func AgentRead(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "message readed",
 	})
+}
+
+func getMD5Hash(text string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(text))
+	return hex.EncodeToString(hasher.Sum(nil))
 }
