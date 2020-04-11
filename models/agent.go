@@ -12,4 +12,5 @@ type Agent struct {
 	Email    string `gorm:"unique_index"`
 	Password string
 	Avatar   string
+	Handled  int
 }

@@ -76,13 +76,12 @@ func CustomerLogin(c *gin.Context) {
 //CustomerSend to save chat
 func CustomerSend(c *gin.Context) {
 	var room models.Room
+	var antrian models.Agent
 	customerID := uint(c.MustGet("jwt_user_id").(float64))
 
+	config.DB.First(&antrian, "name = ?", "antrian")
+
 	if config.DB.First(&room, "customer_id = ?", customerID).RecordNotFound() {
-		var antrian models.Agent
-
-		config.DB.First(&antrian, "name = ?", "antrian")
-
 		room = models.Room{
 			CustomerID: customerID,
 			AgentID:    antrian.ID,
@@ -92,6 +91,7 @@ func CustomerSend(c *gin.Context) {
 	} else {
 		if room.IsResolved == true {
 			if err := config.DB.Model(&room).First(&room, "customer_id = ?", customerID).Updates(map[string]interface{}{
+				"AgentID":    antrian.ID,
 				"IsResolved": false,
 			}).Error; err != nil {
 				fmt.Println(err)

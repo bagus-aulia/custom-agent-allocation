@@ -38,11 +38,10 @@ func main() {
 			agent.PUT("/readed", middleware.IsAdmin(), routes.AgentRead)
 		}
 
-		// kurang ini
 		room := api.Group("room")
 		{
-			room.GET("/divide", routes.CustomerLogin)
-			room.PUT("/resolve", routes.CustomerLogin)
+			room.GET("/divide", routes.RoomDivide)
+			room.PUT("/resolve", middleware.IsAdmin(), routes.RoomResolve)
 		}
 	}
 
