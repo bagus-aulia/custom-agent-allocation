@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"fmt"
+
 	"github.com/bagus-aulia/custom-agent-allocation/config"
 	"github.com/bagus-aulia/custom-agent-allocation/models"
 	"github.com/gin-gonic/gin"
@@ -30,7 +32,7 @@ func CustomerReceive(c *gin.Context) {
 	var room models.Room
 	customerID := uint(c.MustGet("jwt_user_id").(float64))
 
-	config.DB.Preload("Messages", "is_readed = ? AND sender_agent = ?", false, true).First(&room, "customer_id", customerID)
+	config.DB.Preload("Messages", "is_readed = ? AND sender_agent = ?", false, true).First(&room, "customer_id = ?", customerID)
 
 	c.JSON(200, gin.H{
 		"data": room.Messages,
@@ -76,7 +78,7 @@ func CustomerSend(c *gin.Context) {
 	var room models.Room
 	customerID := uint(c.MustGet("jwt_user_id").(float64))
 
-	if config.DB.First(&room, "customer_id = ? AND is_resolved = ?", customerID, false).RecordNotFound() {
+	if config.DB.First(&room, "customer_id = ?", customerID).RecordNotFound() {
 		var antrian models.Agent
 
 		config.DB.First(&antrian, "name = ?", "antrian")
@@ -87,6 +89,15 @@ func CustomerSend(c *gin.Context) {
 		}
 
 		config.DB.Create(&room)
+	} else {
+		if room.IsResolved == true {
+			if err := config.DB.Model(&room).First(&room, "customer_id = ?", customerID).Updates(map[string]interface{}{
+				"IsResolved": false,
+			}).Error; err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
 	}
 
 	senderID := int(customerID)
@@ -100,6 +111,27 @@ func CustomerSend(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"data": message,
-		"room": room,
+	})
+}
+
+//CustomerRead to set readed message status
+func CustomerRead(c *gin.Context) {
+	var room models.Room
+	message := []models.Message{}
+	customerID := uint(c.MustGet("jwt_user_id").(float64))
+
+	if config.DB.First(&room, "customer_id = ?", customerID).RecordNotFound() {
+		c.JSON(404, gin.H{
+			"message": "room doesn't exist",
+		})
+
+		c.Abort()
+		return
+	}
+
+	config.DB.Model(&message).Where("room_id = ? AND sender_agent = ? AND is_readed = ?", room.ID, true, false).Update("is_readed", true)
+
+	c.JSON(200, gin.H{
+		"message": "message readed",
 	})
 }

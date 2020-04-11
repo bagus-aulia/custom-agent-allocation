@@ -2,6 +2,7 @@ package routes
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/bagus-aulia/custom-agent-allocation/config"
 	"github.com/bagus-aulia/custom-agent-allocation/models"
@@ -24,12 +25,14 @@ func AgentIndex(c *gin.Context) {
 
 //AgentReceive to get unread message from customer
 func AgentReceive(c *gin.Context) {
-	// var message models.Message
 	rooms := []models.Room{}
 	agentID := uint(c.MustGet("jwt_user_id").(float64))
 
-	config.DB.Preload("Messages", "is_readed = ? AND sender_agent = ?", false, false).Find(&rooms, "agent_id", agentID)
+	config.DB.Preload("Messages", "is_readed = ? AND sender_agent = ?", false, false).Find(&rooms, "agent_id = ?", agentID)
 
+	c.JSON(200, gin.H{
+		"data": rooms,
+	})
 }
 
 //AgentLogin to generate agent token
@@ -63,5 +66,67 @@ func AgentLogin(c *gin.Context) {
 		"data":    agent,
 		"token":   jwtToken,
 		"message": "login success",
+	})
+}
+
+//AgentSend to save chat
+func AgentSend(c *gin.Context) {
+	var room models.Room
+	agentID := int(c.MustGet("jwt_user_id").(float64))
+	roomID := c.PostForm("room_id")
+
+	if config.DB.First(&room, roomID).RecordNotFound() {
+		c.JSON(404, gin.H{
+			"message": "room not available",
+		})
+
+		c.Abort()
+		return
+	}
+
+	roomIDuint, _ := strconv.ParseUint(c.PostForm("room_id"), 10, 32)
+	message := models.Message{
+		RoomID:      uint(roomIDuint),
+		SenderID:    agentID,
+		SenderAgent: true,
+		Message:     c.PostForm("message"),
+	}
+
+	config.DB.Create(&message)
+
+	c.JSON(200, gin.H{
+		"data": message,
+	})
+}
+
+//AgentRead to set readed message status
+func AgentRead(c *gin.Context) {
+	var room models.Room
+	message := []models.Message{}
+	agentID := uint(c.MustGet("jwt_user_id").(float64))
+	roomID := c.PostForm("room_id")
+	returnMsg := ""
+
+	if config.DB.First(&room, roomID).RecordNotFound() {
+		returnMsg = "room doesn't exist"
+	} else {
+		if room.AgentID != agentID {
+			returnMsg = "you haven't access to this room"
+		}
+	}
+
+	if returnMsg != "" {
+		c.JSON(404, gin.H{
+			"message": returnMsg,
+		})
+
+		c.Abort()
+		return
+	}
+
+	config.DB.Model(&message).Where("room_id = ? AND sender_agent = ? AND is_readed = ?", room.ID, false, false).Update("is_readed", true)
+
+	c.JSON(200, gin.H{
+		"message": "message readed",
 	})
 }

@@ -21,24 +21,24 @@ func main() {
 		{
 			customer.GET("/", middleware.IsAuth(), routes.CustomerIndex)
 			customer.GET("/receive", middleware.IsAuth(), routes.CustomerReceive)
+			customer.GET("/readed", middleware.IsAuth(), routes.CustomerRead)
 
 			customer.POST("/login", routes.CustomerLogin)
 			customer.POST("/send", middleware.IsAuth(), routes.CustomerSend)
-
-			//customer.PUT("/read", middleware.IsAuth(), routes.CustomerIndex)
 		}
 
 		agent := api.Group("agent")
 		{
 			agent.GET("/", middleware.IsAdmin(), routes.AgentIndex)
-			agent.GET("/receive", middleware.IsAdmin(), routes.CustomerLogin)
+			agent.GET("/receive", middleware.IsAdmin(), routes.AgentReceive)
 
 			agent.POST("/login", routes.AgentLogin)
-			// agent.POST("/send", routes.CustomerLogin)
+			agent.POST("/send", middleware.IsAdmin(), routes.AgentSend)
 
-			//agent.PUT("/read", middleware.IsAuth(), routes.CustomerIndex)
+			agent.PUT("/readed", middleware.IsAdmin(), routes.AgentRead)
 		}
 
+		// kurang ini
 		room := api.Group("room")
 		{
 			room.GET("/divide", routes.CustomerLogin)
